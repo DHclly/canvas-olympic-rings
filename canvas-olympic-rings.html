@@ -87,6 +87,35 @@
       ctx2d.arc(205, 110, 40, 0, Math.PI * 2, false);
       // 25. 描边，画出绿色圆环
       ctx2d.stroke();
+
+      // --- 额外绘制三条短弧，形成“环与环之间相交”的视觉效果 ---
+      // 这里并不是画完整圆，而是只画圆的一小段弧线。
+      // 这样可以让相邻圆环看起来像是彼此交叠、错位，逼近奥运五环的经典样式。
+
+      // 绘制蓝色环的右上角短弧：从 1.9π 到 2.1π，形成一个很小的弧段
+      ctx2d.strokeStyle = "#163b62";
+      ctx2d.beginPath();
+      ctx2d.arc(70, 70, 40, Math.PI * 1.9, Math.PI * 2.1, false);
+      ctx2d.stroke();
+
+      // 绘制黑色环的左上和右上两段短弧：
+      // 第一段从 0.5π 到 0.6π，画出左侧小弧；
+      // 第二段从 1.9π 到 2.1π，画出右侧小弧。
+      // 这两段弧线会让黑色环在视觉上显得“断开”且和蓝色、红色环产生交叠关系。
+      ctx2d.strokeStyle = "#000";
+      ctx2d.beginPath();
+      ctx2d.arc(160, 70, 40, Math.PI * 0.5, Math.PI * 0.6, false);
+      ctx2d.stroke();
+      ctx2d.beginPath();
+      ctx2d.arc(160, 70, 40, Math.PI * 1.9, Math.PI * 2.1, false);
+      ctx2d.stroke();
+
+      // 绘制红色环的左上角短弧：从 0.5π 到 0.6π，形成一个很小的弧段
+      // 这段弧线用于增强红色环与黑色环之间的视觉衔接，让整体更像奥运五环。
+      ctx2d.strokeStyle = "#bf0628";
+      ctx2d.beginPath();
+      ctx2d.arc(250, 70, 40, Math.PI * 0.5, Math.PI * 0.6, false);
+      ctx2d.stroke();
     </script>
   </body>
 </html>
