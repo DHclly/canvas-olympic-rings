@@ -14,5 +14,79 @@
     <canvas id="canvas-olympic-rings" class="canvas-panel">
       Your browser does not support canvas element.
     </canvas>
+    <script type="text/javascript">
+      // 1. 获取网页中 id 为 "canvas-olympic-rings" 的 canvas 元素，把它存到变量 canvas1 中
+      var canvas1 = document.getElementById("canvas-olympic-rings");
+
+      // 2. 设置画布的“实际像素宽度”为 322 像素（决定了画布的水平分辨率）
+      canvas1.width = 322;
+
+      // 3. 设置画布的“实际像素高度”为 180 像素（决定了画布的垂直分辨率）
+      canvas1.height = 180;
+
+      // 4. 获取 2D 绘图上下文（可以把它理解为“画笔”），后续所有的绘制操作都通过它来完成
+      var ctx2d = canvas1.getContext("2d");
+
+      // 5. 设置线条的粗细为 6 像素（之后画的所有圆环线条都会是这个粗细）
+      ctx2d.lineWidth = 6;
+
+      // 6. 设置线条的描边颜色为深蓝色（#163B62 是奥运五环中蓝色环的标准色）
+      ctx2d.strokeStyle = "#163B62";
+
+      // 7. 开始一条新的路径（相当于把画笔“提起来”，准备画一个新的独立图形，防止和前面的线条连在一起）
+      ctx2d.beginPath();
+
+      // 8. 画一个圆（或圆弧）。参数解释：
+      //    - 70: 圆心的 X 坐标（距离画布左侧 70 像素）
+      //    - 70: 圆心的 Y 坐标（距离画布顶部 70 像素）
+      //    - 40: 圆的半径（40 像素）
+      //    - 0: 起始角度（0 弧度，即圆的最右侧 3 点钟方向）
+      //    - Math.PI * 2: 结束角度（2π 弧度，即 360 度，画一个完整的圆）
+      //    - false: 绘制方向（false 代表顺时针，true 代表逆时针）
+      ctx2d.arc(70, 70, 40, 0, Math.PI * 2, false);
+
+      // 9. 真正将线条画出来（沿着刚才定义的圆形路径，用之前设置好的深蓝色和 6px 粗细进行描边）
+      ctx2d.stroke();
+
+      // --- 绘制第二个圆环（黑色）---
+      // 10. 更改画笔颜色为黑色（#000000）
+      ctx2d.strokeStyle = "#000000";
+      // 11. 开启一条新路径（非常重要！如果不加这句，下一个圆会和前面的圆连成一条线）
+      ctx2d.beginPath();
+      // 12. 画圆：圆心 X=160，Y=70，半径 40
+      ctx2d.arc(160, 70, 40, 0, Math.PI * 2, false);
+      // 13. 描边，画出黑色圆环
+      ctx2d.stroke();
+
+      // --- 绘制第三个圆环（红色）---
+      // 14. 更改颜色为红色（#BF0628）
+      ctx2d.strokeStyle = "#BF0628";
+      // 15. 开启新路径
+      ctx2d.beginPath();
+      // 16. 画圆：圆心 X=250，Y=70，半径 40
+      ctx2d.arc(250, 70, 40, 0, Math.PI * 2, false);
+      // 17. 描边，画出红色圆环
+      ctx2d.stroke();
+
+      // --- 绘制第四个圆环（黄色）---
+      // 18. 更改颜色为黄色（#EBC41F）
+      ctx2d.strokeStyle = "#EBC41F";
+      // 19. 开启新路径
+      ctx2d.beginPath();
+      // 20. 画圆：圆心 X=115，Y=110，半径 40（注意：Y 坐标变大了，所以这个圆在下方）
+      ctx2d.arc(115, 110, 40, 0, Math.PI * 2, false);
+      // 21. 描边，画出黄色圆环
+      ctx2d.stroke();
+
+      // --- 绘制第五个圆环（绿色）---
+      // 22. 更改颜色为绿色（#198E4A）
+      ctx2d.strokeStyle = "#198E4A";
+      // 23. 开启新路径
+      ctx2d.beginPath();
+      // 24. 画圆：圆心 X=205，Y=110，半径 40（同样在下方，位于黄色圆环右侧）
+      ctx2d.arc(205, 110, 40, 0, Math.PI * 2, false);
+      // 25. 描边，画出绿色圆环
+      ctx2d.stroke();
+    </script>
   </body>
 </html>
