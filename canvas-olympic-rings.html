@@ -5,8 +5,207 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Canvas 绘制奥运五环</title>
     <style>
+      body {
+        min-height: 100vh;
+        margin: 0;
+        padding: 24px;
+        box-sizing: border-box;
+        font-family:
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        background: #f5f7fa;
+      }
+
       .canvas-panel {
         border: 1px solid #c3c3c3;
+        background: #ffffff;
+        max-width: calc(100vw - 48px);
+        height: auto;
+      }
+
+      .control-panel {
+        position: fixed;
+        top: 24px;
+        right: 24px;
+        z-index: 10;
+        width: min(340px, calc(100vw - 48px));
+        max-height: calc(100vh - 48px);
+        border: 1px solid #d4d8df;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.96);
+        box-shadow: 0 16px 48px rgba(28, 35, 48, 0.18);
+        overflow: hidden;
+        transition:
+          transform 180ms ease,
+          box-shadow 180ms ease;
+        will-change: transform;
+      }
+
+      .control-panel.is-collapsed {
+        transform: translateX(calc(100% - 44px));
+        box-shadow: 0 8px 24px rgba(28, 35, 48, 0.14);
+      }
+
+      .control-panel__header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        min-height: 44px;
+        padding: 0 10px 0 14px;
+        border-bottom: 1px solid #e5e8ee;
+        background: #ffffff;
+      }
+
+      .control-panel__title {
+        margin: 0;
+        font-size: 15px;
+        font-weight: 650;
+        color: #1f2937;
+        transition: opacity 160ms ease;
+      }
+
+      .control-panel.is-collapsed .control-panel__title {
+        opacity: 0;
+      }
+
+      .icon-button {
+        display: inline-grid;
+        place-items: center;
+        flex: 0 0 auto;
+        width: 32px;
+        height: 32px;
+        border: 1px solid #d4d8df;
+        border-radius: 6px;
+        background: #ffffff;
+        color: #374151;
+        cursor: pointer;
+        transition:
+          background-color 140ms ease,
+          border-color 140ms ease;
+      }
+
+      .icon-button:hover {
+        border-color: #9ca3af;
+        background: #f3f4f6;
+      }
+
+      .control-panel.is-collapsed .icon-button {
+        position: absolute;
+        top: 6px;
+        left: 6px;
+      }
+
+      .control-panel__body {
+        max-height: calc(100vh - 94px);
+        padding: 12px 14px 0;
+        overflow: auto;
+        transition:
+          opacity 160ms ease,
+          visibility 160ms ease;
+      }
+
+      .control-panel.is-collapsed .control-panel__body {
+        opacity: 0;
+        visibility: hidden;
+      }
+
+      .control-group {
+        margin: 0 0 14px;
+        padding: 0 0 12px;
+        border: 0;
+        border-bottom: 1px solid #e5e8ee;
+      }
+
+      .control-group:last-of-type {
+        margin-bottom: 12px;
+      }
+
+      .control-group legend {
+        padding: 0 0 8px;
+        font-size: 13px;
+        font-weight: 650;
+        color: #374151;
+      }
+
+      .control-row {
+        display: grid;
+        grid-template-columns: 88px 1fr 72px;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px;
+        font-size: 12px;
+        color: #4b5563;
+      }
+
+      .control-row--color {
+        grid-template-columns: 88px 44px 1fr;
+      }
+
+      .control-row input[type="range"] {
+        width: 100%;
+      }
+
+      .control-row input[type="number"],
+      .control-row input[type="text"] {
+        width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
+        padding: 5px 6px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        font: inherit;
+      }
+
+      .control-row input[type="color"] {
+        width: 36px;
+        height: 30px;
+        padding: 2px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        background: #ffffff;
+      }
+
+      .control-row input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
+      }
+
+      .control-actions {
+        position: sticky;
+        bottom: 0;
+        display: flex;
+        gap: 8px;
+        margin: 0 -14px;
+        padding: 10px 14px 14px;
+        border-top: 1px solid #e5e8ee;
+        background: rgba(255, 255, 255, 0.98);
+      }
+
+      .control-button {
+        flex: 1;
+        height: 34px;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        background: #ffffff;
+        color: #1f2937;
+        font: inherit;
+        cursor: pointer;
+      }
+
+      .control-button:hover {
+        background: #f3f4f6;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .control-panel,
+        .control-panel__body,
+        .icon-button {
+          transition: none;
+        }
       }
     </style>
   </head>
@@ -14,6 +213,108 @@
     <canvas id="canvas-olympic-rings" class="canvas-panel">
       Your browser does not support canvas element.
     </canvas>
+    <aside id="rings-control-panel" class="control-panel" aria-label="奥运五环控制面板">
+      <div class="control-panel__header">
+        <h2 class="control-panel__title">五环参数</h2>
+        <button id="toggle-panel" class="icon-button" type="button" aria-label="折叠控制面板">›</button>
+      </div>
+      <form id="rings-control-form" class="control-panel__body">
+        <fieldset class="control-group">
+          <legend>布局</legend>
+          <label class="control-row">
+            <span>X</span>
+            <input name="x" type="range" min="0" max="160" step="1" />
+            <input name="xNumber" type="number" min="0" max="160" step="1" />
+          </label>
+          <label class="control-row">
+            <span>Y</span>
+            <input name="y" type="range" min="0" max="160" step="1" />
+            <input name="yNumber" type="number" min="0" max="160" step="1" />
+          </label>
+        </fieldset>
+
+        <fieldset class="control-group">
+          <legend>尺寸比例</legend>
+          <label class="control-row">
+            <span>内圈半径</span>
+            <input name="innerRadius" type="range" min="10" max="140" step="1" />
+            <input name="innerRadiusNumber" type="number" min="10" max="140" step="1" />
+          </label>
+          <label class="control-row">
+            <span>内圈比例</span>
+            <input name="innerRadiusRatio" type="range" min="0.5" max="1.5" step="0.01" />
+            <input name="innerRadiusRatioNumber" type="number" min="0.5" max="1.5" step="0.01" />
+          </label>
+          <label class="control-row">
+            <span>外圈比例</span>
+            <input name="outerRadiusRatio" type="range" min="1.01" max="1.8" step="0.01" />
+            <input name="outerRadiusRatioNumber" type="number" min="1.01" max="1.8" step="0.01" />
+          </label>
+          <label class="control-row">
+            <span>水平距离</span>
+            <input name="horizontalGapRatio" type="range" min="1.4" max="3.6" step="0.01" />
+            <input name="horizontalGapRatioNumber" type="number" min="1.4" max="3.6" step="0.01" />
+          </label>
+          <label class="control-row">
+            <span>垂直距离</span>
+            <input name="verticalGapRatio" type="range" min="0.2" max="2" step="0.01" />
+            <input name="verticalGapRatioNumber" type="number" min="0.2" max="2" step="0.01" />
+          </label>
+        </fieldset>
+
+        <fieldset class="control-group">
+          <legend>颜色</legend>
+          <label class="control-row control-row--color">
+            <span>背景</span>
+            <input name="backgroundColor" type="color" />
+            <input name="backgroundColorText" type="text" />
+          </label>
+          <label class="control-row control-row--color">
+            <span>蓝环</span>
+            <input name="blue" type="color" />
+            <input name="blueText" type="text" />
+          </label>
+          <label class="control-row control-row--color">
+            <span>黑环</span>
+            <input name="black" type="color" />
+            <input name="blackText" type="text" />
+          </label>
+          <label class="control-row control-row--color">
+            <span>红环</span>
+            <input name="red" type="color" />
+            <input name="redText" type="text" />
+          </label>
+          <label class="control-row control-row--color">
+            <span>黄环</span>
+            <input name="yellow" type="color" />
+            <input name="yellowText" type="text" />
+          </label>
+          <label class="control-row control-row--color">
+            <span>绿环</span>
+            <input name="green" type="color" />
+            <input name="greenText" type="text" />
+          </label>
+          <label class="control-row control-row--color">
+            <span>统一颜色</span>
+            <input name="allRingsColor" type="color" value="#0085c7" />
+            <button id="apply-all-color" class="control-button" type="button">应用</button>
+          </label>
+        </fieldset>
+
+        <fieldset class="control-group">
+          <legend>调试</legend>
+          <label class="control-row control-row--color">
+            <span>补画颜色</span>
+            <input name="debugEnabled" type="checkbox" />
+            <input name="debugInterlacedColor" type="color" value="#ff69b4" />
+          </label>
+        </fieldset>
+
+        <div class="control-actions">
+          <button id="reset-controls" class="control-button" type="button">重置</button>
+        </div>
+      </form>
+    </aside>
     <script type="text/javascript">
       /**
        * @typedef {Object} OlympicRingColors
@@ -489,21 +790,172 @@
         }
       }
 
-      const canvas1 = document.getElementById("canvas-olympic-rings");
-      const olympicRings = new OlympicRings({
+      const canvas = document.getElementById("canvas-olympic-rings");
+      const controlPanel = document.getElementById("rings-control-panel");
+      const controlForm = document.getElementById("rings-control-form");
+      const togglePanelButton = document.getElementById("toggle-panel");
+      const resetControlsButton = document.getElementById("reset-controls");
+      const applyAllColorButton = document.getElementById("apply-all-color");
+      const initialOptions = {
         x: 25,
         y: 25,
         innerRadius: 100,
         // debugInterlacedColor: "pink",
+      };
+      const defaultOptions = {
+        ...OlympicRings.defaultOptions,
+        ...initialOptions,
+        colors: {
+          ...OlympicRings.defaultOptions.colors,
+          ...initialOptions.colors,
+        },
+      };
+      const olympicRings = new OlympicRings(defaultOptions);
+      const numberControlNames = [
+        "x",
+        "y",
+        "innerRadius",
+        "innerRadiusRatio",
+        "outerRadiusRatio",
+        "horizontalGapRatio",
+        "verticalGapRatio",
+      ];
+      const colorControlNames = [
+        "backgroundColor",
+        ...OlympicRings.ringNames,
+      ];
+      let renderFrameId = null;
+
+      const getControl = (name) => controlForm.elements[name];
+      const isHexColor = (value) => /^#[0-9a-f]{6}$/i.test(value);
+      const cloneOptions = (options) => ({
+        ...options,
+        colors: { ...options.colors },
+      });
+      let currentOptions = cloneOptions(defaultOptions);
+
+      const setNumberControls = (name, value) => {
+        getControl(name).value = value;
+        getControl(`${name}Number`).value = value;
+      };
+
+      const setColorControls = (name, value) => {
+        if (isHexColor(value)) {
+          getControl(name).value = value;
+        }
+
+        getControl(`${name}Text`).value = value;
+      };
+
+      const syncControlsFromOptions = () => {
+        numberControlNames.forEach((name) => setNumberControls(name, currentOptions[name]));
+        setColorControls("backgroundColor", currentOptions.backgroundColor);
+        OlympicRings.ringNames.forEach((name) => setColorControls(name, currentOptions.colors[name]));
+        getControl("debugEnabled").checked = Boolean(currentOptions.debugInterlacedColor);
+        getControl("debugInterlacedColor").value = currentOptions.debugInterlacedColor ?? "#ff69b4";
+      };
+
+      const render = () => {
+        renderFrameId = null;
+        olympicRings.options = cloneOptions(currentOptions);
+        olympicRings.resizeCanvas(canvas).draw(canvas);
+      };
+
+      const scheduleRender = () => {
+        if (renderFrameId !== null) {
+          return;
+        }
+
+        renderFrameId = requestAnimationFrame(render);
+      };
+
+      const updateNumberOption = (name, value) => {
+        const numberValue = Number(value);
+
+        if (!Number.isFinite(numberValue)) {
+          return;
+        }
+
+        currentOptions[name] = numberValue;
+        setNumberControls(name, value);
+        scheduleRender();
+      };
+
+      const updateColorOption = (name, value) => {
+        if (!isHexColor(value)) {
+          getControl(`${name}Text`).value = value;
+          return;
+        }
+
+        if (name === "backgroundColor") {
+          currentOptions.backgroundColor = value;
+        } else {
+          currentOptions.colors[name] = value;
+        }
+
+        setColorControls(name, value);
+        scheduleRender();
+      };
+
+      controlForm.addEventListener("input", (event) => {
+        const { name, value, checked } = event.target;
+
+        if (numberControlNames.includes(name)) {
+          updateNumberOption(name, value);
+          return;
+        }
+
+        if (name.endsWith("Number")) {
+          updateNumberOption(name.replace("Number", ""), value);
+          return;
+        }
+
+        if (colorControlNames.includes(name)) {
+          updateColorOption(name, value);
+          return;
+        }
+
+        if (name.endsWith("Text")) {
+          updateColorOption(name.replace("Text", ""), value);
+          return;
+        }
+
+        if (name === "debugEnabled") {
+          currentOptions.debugInterlacedColor = checked ? getControl("debugInterlacedColor").value : null;
+          scheduleRender();
+          return;
+        }
+
+        if (name === "debugInterlacedColor") {
+          currentOptions.debugInterlacedColor = getControl("debugEnabled").checked ? value : null;
+          scheduleRender();
+        }
       });
 
-      olympicRings.resizeCanvas(canvas1);
-      olympicRings.draw(canvas1);
+      applyAllColorButton.addEventListener("click", () => {
+        const color = getControl("allRingsColor").value;
 
-      // 可扩展调用示例：
-      // olympicRings.setAllRingColor("#0085C7").setBackgroundColor("#f7f7f7").draw(canvas1);
-      // olympicRings.setRingColor("green", "#00a651").draw(canvas1);
-      console.log(olympicRings.getRings());
+        OlympicRings.ringNames.forEach((name) => {
+          currentOptions.colors[name] = color;
+          setColorControls(name, color);
+        });
+        scheduleRender();
+      });
+
+      resetControlsButton.addEventListener("click", () => {
+        currentOptions = cloneOptions(defaultOptions);
+        syncControlsFromOptions();
+        scheduleRender();
+      });
+
+      togglePanelButton.addEventListener("click", () => {
+        const isCollapsed = controlPanel.classList.toggle("is-collapsed");
+        togglePanelButton.textContent = isCollapsed ? "‹" : "›";
+        togglePanelButton.setAttribute("aria-label", isCollapsed ? "展开控制面板" : "折叠控制面板");
+      });
+
+      syncControlsFromOptions();
+      render();
     </script>
   </body>
 </html>
