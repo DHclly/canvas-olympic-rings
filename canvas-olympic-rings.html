@@ -15,107 +15,376 @@
       Your browser does not support canvas element.
     </canvas>
     <script type="text/javascript">
-      // 1. 获取网页中 id 为 "canvas-olympic-rings" 的 canvas 元素，把它存到变量 canvas1 中
-      var canvas1 = document.getElementById("canvas-olympic-rings");
+      /**
+       * @typedef {Object} OlympicRingColors
+       * @property {string} blue 蓝色环颜色。
+       * @property {string} black 黑色环颜色。
+       * @property {string} red 红色环颜色。
+       * @property {string} yellow 黄色环颜色。
+       * @property {string} green 绿色环颜色。
+       */
 
-      // 2. 设置画布的“实际像素宽度”为 322 像素（决定了画布的水平分辨率）
-      canvas1.width = 322;
+      /**
+       * @typedef {Object} OlympicRingsOptions
+       * @property {number} [x=15] 五环整体距离画布左侧的偏移量。
+       * @property {number} [y=20] 五环整体距离画布顶部的偏移量。
+       * @property {number} [innerRadius=40] 基础内圈半径，所有比例都基于这个值计算。
+       * @property {number} [innerRadiusRatio=1] 内圈半径比例。
+       * @property {number} [outerRadiusRatio=1.2] 外圈半径比例。
+       * @property {number} [horizontalGapRatio=2.6] 相邻圆环圆心水平距离比例。
+       * @property {number} [verticalGapRatio=1.1] 上下两排圆环圆心垂直距离比例。
+       * @property {string} [backgroundColor="#ffffff"] 画布背景色。
+       * @property {Partial<OlympicRingColors>} [colors] 五个圆环的颜色配置。
+       */
 
-      // 3. 设置画布的“实际像素高度”为 180 像素（决定了画布的垂直分辨率）
-      canvas1.height = 180;
+      /**
+       * @typedef {Object} OlympicRing
+       * @property {string} name 圆环名称。
+       * @property {string} color 圆环颜色。
+       * @property {number} x 圆心 X 坐标。
+       * @property {number} y 圆心 Y 坐标。
+       * @property {number} radius Canvas 描边圆弧使用的中心线半径。
+       * @property {number} innerRadius 圆环内圈半径。
+       * @property {number} outerRadius 圆环外圈半径。
+       */
 
-      // 4. 获取 2D 绘图上下文（可以把它理解为“画笔”），后续所有的绘制操作都通过它来完成
-      var ctx2d = canvas1.getContext("2d");
+      /**
+       * @typedef {Object} OlympicRingsParams
+       * @property {number} x 五环整体距离画布左侧的偏移量。
+       * @property {number} y 五环整体距离画布顶部的偏移量。
+       * @property {number} innerRadius 圆环内圈半径。
+       * @property {number} outerRadius 圆环外圈半径。
+       * @property {number} lineRadius Canvas 描边圆弧使用的中心线半径。
+       * @property {number} lineWidth Canvas 描边线宽。
+       * @property {number} horizontalGap 相邻圆环圆心水平距离。
+       * @property {number} verticalGap 上下两排圆环圆心垂直距离。
+       * @property {string} backgroundColor 画布背景色。
+       * @property {OlympicRing[]} rings 计算完成后的五个圆环参数。
+       * @property {function(string|number, string): OlympicRingsParams} setRingColor 设置单个圆环颜色。
+       * @property {function(Partial<OlympicRingColors>): OlympicRingsParams} setRingColors 批量设置圆环颜色。
+       * @property {function(string): OlympicRingsParams} setAllRingColor 设置所有圆环为同一种颜色。
+       * @property {function(string): OlympicRingsParams} setBackgroundColor 设置画布背景色。
+       * @property {function(HTMLCanvasElement|CanvasRenderingContext2D): OlympicRingsParams} draw 重新绘制五环。
+       */
 
-      // 5. 设置线条的粗细为 6 像素（之后画的所有圆环线条都会是这个粗细）
-      ctx2d.lineWidth = 6;
+      /**
+       * 根据偏移量、半径和比例计算奥运五环参数，并使用 Canvas 进行绘制。
+       */
+      class OlympicRings {
+        /**
+         * 创建奥运五环绘制器。
+         *
+         * @param {OlympicRingsOptions} [options] 五环绘制配置。
+         */
+        constructor(options) {
+          const defaults = {
+            x: 15,
+            y: 20,
+            innerRadius: 40,
+            innerRadiusRatio: 1,
+            outerRadiusRatio: 1.2,
+            horizontalGapRatio: 2.6,
+            verticalGapRatio: 1.1,
+            backgroundColor: "#ffffff",
+            colors: {
+              blue: "#0085C7",
+              black: "#000000",
+              red: "#DF0024",
+              yellow: "#F4C300",
+              green: "#009F3D",
+            },
+          };
 
-      // 6. 设置线条的描边颜色为深蓝色（奥运五环中蓝色环采用国际标准蓝色）
-      ctx2d.strokeStyle = "#0085C7";
+          this.options = Object.assign({}, defaults, options);
+          this.options.colors = Object.assign({}, defaults.colors, options && options.colors);
+          this.ringNames = ["blue", "black", "red", "yellow", "green"];
+        }
 
-      // 7. 开始一条新的路径（相当于把画笔“提起来”，准备画一个新的独立图形，防止和前面的线条连在一起）
-      ctx2d.beginPath();
+        /**
+         * 获取按比例计算后的内圈半径。
+         *
+         * @returns {number} 内圈半径。
+         */
+        get innerRadius() {
+          return this.options.innerRadius * this.options.innerRadiusRatio;
+        }
 
-      // 8. 画一个圆（或圆弧）。参数解释：
-      //    - 70: 圆心的 X 坐标（距离画布左侧 70 像素）
-      //    - 70: 圆心的 Y 坐标（距离画布顶部 70 像素）
-      //    - 40: 圆的半径（40 像素）
-      //    - 0: 起始角度（0 弧度，即圆的最右侧 3 点钟方向）
-      //    - Math.PI * 2: 结束角度（2π 弧度，即 360 度，画一个完整的圆）
-      //    - false: 绘制方向（false 代表顺时针，true 代表逆时针）
-      ctx2d.arc(70, 70, 40, 0, Math.PI * 2, false);
+        /**
+         * 获取按比例计算后的外圈半径。
+         *
+         * @returns {number} 外圈半径。
+         */
+        get outerRadius() {
+          return this.options.innerRadius * this.options.outerRadiusRatio;
+        }
 
-      // 9. 真正将线条画出来（沿着刚才定义的圆形路径，用之前设置好的深蓝色和 6px 粗细进行描边）
-      ctx2d.stroke();
+        /**
+         * 获取 Canvas arc 绘制时使用的中心线半径。
+         *
+         * @returns {number} 描边中心线半径。
+         */
+        get lineRadius() {
+          return (this.innerRadius + this.outerRadius) / 2;
+        }
 
-      // --- 绘制第二个圆环（黑色）---
-      // 10. 更改画笔颜色为黑色（奥运五环中的黑色环）
-      ctx2d.strokeStyle = "#000000";
-      // 11. 开启一条新路径（非常重要！如果不加这句，下一个圆会和前面的圆连成一条线）
-      ctx2d.beginPath();
-      // 12. 画圆：圆心 X=160，Y=70，半径 40
-      ctx2d.arc(160, 70, 40, 0, Math.PI * 2, false);
-      // 13. 描边，画出黑色圆环
-      ctx2d.stroke();
+        /**
+         * 获取 Canvas 描边线宽。
+         *
+         * @returns {number} 描边线宽。
+         */
+        get lineWidth() {
+          return this.outerRadius - this.innerRadius;
+        }
 
-      // --- 绘制第三个圆环（红色）---
-      // 14. 更改颜色为红色（奥运五环中的红色环）
-      ctx2d.strokeStyle = "#DF0024";
-      // 15. 开启新路径
-      ctx2d.beginPath();
-      // 16. 画圆：圆心 X=250，Y=70，半径 40
-      ctx2d.arc(250, 70, 40, 0, Math.PI * 2, false);
-      // 17. 描边，画出红色圆环
-      ctx2d.stroke();
+        /**
+         * 获取相邻圆环圆心的水平距离。
+         *
+         * @returns {number} 水平圆心距。
+         */
+        get horizontalGap() {
+          return this.options.innerRadius * this.options.horizontalGapRatio;
+        }
 
-      // --- 绘制第四个圆环（黄色）---
-      // 18. 更改颜色为黄色（奥运五环中的黄色环）
-      ctx2d.strokeStyle = "#F4C300";
-      // 19. 开启新路径
-      ctx2d.beginPath();
-      // 20. 画圆：圆心 X=115，Y=110，半径 40（注意：Y 坐标变大了，所以这个圆在下方）
-      ctx2d.arc(115, 110, 40, 0, Math.PI * 2, false);
-      // 21. 描边，画出黄色圆环
-      ctx2d.stroke();
+        /**
+         * 获取上下两排圆环圆心的垂直距离。
+         *
+         * @returns {number} 垂直圆心距。
+         */
+        get verticalGap() {
+          return this.options.innerRadius * this.options.verticalGapRatio;
+        }
 
-      // --- 绘制第五个圆环（绿色）---
-      // 22. 更改颜色为绿色（奥运五环中的绿色环）
-      ctx2d.strokeStyle = "#009F3D";
-      // 23. 开启新路径
-      ctx2d.beginPath();
-      // 24. 画圆：圆心 X=205，Y=110，半径 40（同样在下方，位于黄色圆环右侧）
-      ctx2d.arc(205, 110, 40, 0, Math.PI * 2, false);
-      // 25. 描边，画出绿色圆环
-      ctx2d.stroke();
+        /**
+         * 按奥运五环布局比例计算五个圆环的位置和尺寸。
+         *
+         * @returns {OlympicRing[]} 五个圆环的参数列表。
+         */
+        getRings() {
+          const startX = this.options.x + this.outerRadius;
+          const startY = this.options.y + this.outerRadius;
+          const middleOffsetX = this.horizontalGap / 2;
 
-      // --- 额外绘制三条短弧，形成“环与环之间相交”的视觉效果 ---
-      // 这里并不是画完整圆，而是只画圆的一小段弧线。
-      // 这样可以让相邻圆环看起来像是彼此交叠、错位，逼近奥运五环的经典样式。
+          return [
+            this.createRing("blue", startX, startY),
+            this.createRing("black", startX + this.horizontalGap, startY),
+            this.createRing("red", startX + this.horizontalGap * 2, startY),
+            this.createRing("yellow", startX + middleOffsetX, startY + this.verticalGap),
+            this.createRing("green", startX + this.horizontalGap + middleOffsetX, startY + this.verticalGap),
+          ];
+        }
 
-      // 绘制蓝色环的右上角短弧：从 1.9π 到 2.1π，形成一个很小的弧段
-      ctx2d.strokeStyle = "#0085C7";
-      ctx2d.beginPath();
-      ctx2d.arc(70, 70, 40, Math.PI * 1.9, Math.PI * 2.1, false);
-      ctx2d.stroke();
+        /**
+         * 获取当前五环的完整参数对象，并在参数对象上暴露可扩展操作方法。
+         *
+         * @returns {OlympicRingsParams} 当前五环参数。
+         */
+        getParams() {
+          return {
+            x: this.options.x,
+            y: this.options.y,
+            innerRadius: this.innerRadius,
+            outerRadius: this.outerRadius,
+            lineRadius: this.lineRadius,
+            lineWidth: this.lineWidth,
+            horizontalGap: this.horizontalGap,
+            verticalGap: this.verticalGap,
+            backgroundColor: this.options.backgroundColor,
+            rings: this.getRings(),
+            setRingColor: (ringNameOrIndex, color) => {
+              this.setRingColor(ringNameOrIndex, color);
+              return this.getParams();
+            },
+            setRingColors: (colors) => {
+              this.setRingColors(colors);
+              return this.getParams();
+            },
+            setAllRingColor: (color) => {
+              this.setAllRingColor(color);
+              return this.getParams();
+            },
+            setBackgroundColor: (color) => {
+              this.setBackgroundColor(color);
+              return this.getParams();
+            },
+            draw: (canvasOrContext) => this.draw(canvasOrContext),
+          };
+        }
 
-      // 绘制黑色环的左上和右上两段短弧：
-      // 第一段从 0.5π 到 0.6π，画出左侧小弧；
-      // 第二段从 1.9π 到 2.1π，画出右侧小弧。
-      // 这两段弧线会让黑色环在视觉上显得“断开”且和蓝色、红色环产生交叠关系。
-      ctx2d.strokeStyle = "#000";
-      ctx2d.beginPath();
-      ctx2d.arc(160, 70, 40, Math.PI * 0.5, Math.PI * 0.6, false);
-      ctx2d.stroke();
-      ctx2d.beginPath();
-      ctx2d.arc(160, 70, 40, Math.PI * 1.9, Math.PI * 2.1, false);
-      ctx2d.stroke();
+        /**
+         * 设置单个圆环颜色。
+         *
+         * @param {string|number} ringNameOrIndex 圆环名称，或圆环索引：0 蓝、1 黑、2 红、3 黄、4 绿。
+         * @param {string} color CSS 颜色值。
+         * @returns {OlympicRings} 当前实例，便于链式调用。
+         */
+        setRingColor(ringNameOrIndex, color) {
+          const ringName = typeof ringNameOrIndex === "number" ? this.ringNames[ringNameOrIndex] : ringNameOrIndex;
 
-      // 绘制红色环的左上角短弧：从 0.5π 到 0.6π，形成一个很小的弧段
-      // 这段弧线用于增强红色环与黑色环之间的视觉衔接，让整体更像奥运五环。
-      ctx2d.strokeStyle = "#DF0024";
-      ctx2d.beginPath();
-      ctx2d.arc(250, 70, 40, Math.PI * 0.5, Math.PI * 0.6, false);
-      ctx2d.stroke();
+          if (this.options.colors[ringName]) {
+            this.options.colors[ringName] = color;
+          }
+
+          return this;
+        }
+
+        /**
+         * 批量设置圆环颜色。
+         *
+         * @param {Partial<OlympicRingColors>} colors 需要覆盖的圆环颜色。
+         * @returns {OlympicRings} 当前实例，便于链式调用。
+         */
+        setRingColors(colors) {
+          Object.keys(colors).forEach((ringName) => {
+            this.setRingColor(ringName, colors[ringName]);
+          });
+
+          return this;
+        }
+
+        /**
+         * 设置所有圆环为同一种颜色。
+         *
+         * @param {string} color CSS 颜色值。
+         * @returns {OlympicRings} 当前实例，便于链式调用。
+         */
+        setAllRingColor(color) {
+          this.ringNames.forEach((ringName) => {
+            this.options.colors[ringName] = color;
+          });
+
+          return this;
+        }
+
+        /**
+         * 设置画布背景色。
+         *
+         * @param {string} color CSS 颜色值。
+         * @returns {OlympicRings} 当前实例，便于链式调用。
+         */
+        setBackgroundColor(color) {
+          this.options.backgroundColor = color;
+          return this;
+        }
+
+        /**
+         * 根据当前五环尺寸自动调整画布大小。
+         *
+         * @param {HTMLCanvasElement} canvas 需要调整尺寸的 canvas 元素。
+         * @returns {OlympicRings} 当前实例，便于链式调用。
+         */
+        resizeCanvas(canvas) {
+          const params = this.getParams();
+          const maxX = Math.max.apply(
+            null,
+            params.rings.map((ring) => ring.x + params.outerRadius),
+          );
+          const maxY = Math.max.apply(
+            null,
+            params.rings.map((ring) => ring.y + params.outerRadius),
+          );
+
+          canvas.width = Math.ceil(maxX + this.options.x);
+          canvas.height = Math.ceil(maxY + this.options.y);
+          return this;
+        }
+
+        /**
+         * 绘制奥运五环，并返回本次绘制使用的参数对象。
+         *
+         * @param {HTMLCanvasElement|CanvasRenderingContext2D} canvasOrContext canvas 元素或 2D 绘图上下文。
+         * @returns {OlympicRingsParams} 本次绘制使用的五环参数。
+         */
+        draw(canvasOrContext) {
+          const ctx = canvasOrContext.getContext ? canvasOrContext.getContext("2d") : canvasOrContext;
+          const canvas = ctx.canvas;
+          const params = this.getParams();
+
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.fillStyle = params.backgroundColor;
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.lineWidth = params.lineWidth;
+          ctx.lineCap = "round";
+
+          params.rings.forEach((ring) => this.drawArc(ctx, ring, 0, Math.PI * 2));
+          this.drawInterlacedArcs(ctx, params.rings);
+
+          return params;
+        }
+
+        /**
+         * 创建单个圆环的参数对象。
+         *
+         * @param {string} name 圆环名称。
+         * @param {number} x 圆心 X 坐标。
+         * @param {number} y 圆心 Y 坐标。
+         * @returns {OlympicRing} 单个圆环参数。
+         */
+        createRing(name, x, y) {
+          return {
+            name: name,
+            color: this.options.colors[name],
+            x: x,
+            y: y,
+            radius: this.lineRadius,
+            innerRadius: this.innerRadius,
+            outerRadius: this.outerRadius,
+          };
+        }
+
+        /**
+         * 绘制指定圆环的一段圆弧。
+         *
+         * @param {CanvasRenderingContext2D} ctx Canvas 2D 绘图上下文。
+         * @param {OlympicRing} ring 圆环参数。
+         * @param {number} startAngle 起始角度，单位为弧度。
+         * @param {number} endAngle 结束角度，单位为弧度。
+         * @returns {void}
+         */
+        drawArc(ctx, ring, startAngle, endAngle) {
+          ctx.strokeStyle = ring.color;
+          ctx.beginPath();
+          ctx.arc(ring.x, ring.y, ring.radius, startAngle, endAngle, false);
+          ctx.stroke();
+        }
+
+        /**
+         * 补画局部弧线，形成五环相互交错的视觉效果。
+         *
+         * @param {CanvasRenderingContext2D} ctx Canvas 2D 绘图上下文。
+         * @param {OlympicRing[]} rings 五个圆环的参数列表。
+         * @returns {void}
+         */
+        drawInterlacedArcs(ctx, rings) {
+          const ringMap = rings.reduce((map, ring) => {
+            map[ring.name] = ring;
+            return map;
+          }, {});
+
+          [
+            { name: "blue", start: 1.9, end: 2.1 },
+            { name: "black", start: 0.5, end: 0.6 },
+            { name: "black", start: 1.9, end: 2.1 },
+            { name: "red", start: 0.5, end: 0.6 },
+          ].forEach((arc) => {
+            this.drawArc(ctx, ringMap[arc.name], Math.PI * arc.start, Math.PI * arc.end);
+          });
+        }
+      }
+
+      const canvas1 = document.getElementById("canvas-olympic-rings");
+      const olympicRings = new OlympicRings({
+        x: 0,
+        y: 0,
+        innerRadius: 60,
+      });
+
+      olympicRings.resizeCanvas(canvas1);
+      const olympicRingsParams = olympicRings.draw(canvas1);
+
+      // 可扩展调用示例：
+      // olympicRings.setAllRingColor("#0085C7").setBackgroundColor("#f7f7f7").draw(canvas1);
+      // olympicRings.setRingColor("green", "#00a651").draw(canvas1);
+      console.log(olympicRingsParams);
     </script>
   </body>
 </html>
