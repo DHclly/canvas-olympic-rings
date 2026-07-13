@@ -7,6 +7,8 @@
 - `canvas-olympic-rings.html`
 - `奥运五环标准图片.webp`
 
+在线访问奥运五环效果：[点我](https://dhclly.github.io/canvas-olympic-rings/)
+
 ## 1. 奥运五环是什么
 
 ![](./olympic-rings-standard.webp)
