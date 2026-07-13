@@ -321,6 +321,89 @@
         }
 
         /**
+         * 根据两个圆的交点，计算第一个圆上两个交点对应的角度。
+         *
+         * @param {OlympicRing} ring 圆环参数。
+         * @param {OlympicRing} otherRing 与它相交的另一个圆环参数。
+         * @returns {{ angle: number, x: number, y: number }[]} 两个交点在 ring 上对应的角度和坐标。
+         */
+        getIntersectionAngles(ring, otherRing) {
+          const dx = otherRing.x - ring.x;
+          const dy = otherRing.y - ring.y;
+          const distance = Math.hypot(dx, dy);
+          const radius = ring.radius;
+
+          // 如果两个圆没有相交，或者圆心完全重合，就没有可用于补画的交点。
+          if (distance === 0 || distance > radius * 2) {
+            return [];
+          }
+
+          // 两个圆心连线的方向角。可以理解为：从 ring 圆心看向 otherRing 圆心的角度。
+          const baseAngle = Math.atan2(dy, dx);
+
+          // 两个圆半径相同，所以两个交点会对称分布在圆心连线两侧。
+          // distance / 2 是圆心到“两个交点连线中点”的距离。
+          // 用 cos(夹角) = 邻边 / 斜边 = (distance / 2) / radius，反推出夹角。
+          const offsetAngle = Math.acos(distance / (2 * radius));
+
+          // 第一个交点角度 = 圆心连线方向角 + 夹角；第二个交点角度 = 圆心连线方向角 - 夹角。
+          return [baseAngle + offsetAngle, baseAngle - offsetAngle].map((angle) => ({
+            angle,
+            // 角度转回坐标，方便后面按交点位置选择到底补画哪一个交点附近的弧。
+            x: ring.x + Math.cos(angle) * radius,
+            y: ring.y + Math.sin(angle) * radius,
+          }));
+        }
+
+        /**
+         * 从两个交点里选择需要补画的那个交点角度。
+         *
+         * @param {OlympicRing} upperRing 需要压在上面的圆环。
+         * @param {OlympicRing} lowerRing 被压在下面的圆环。
+         * @param {"upper"|"lower"} pointPosition 选择更靠上的交点，还是更靠下的交点。
+         * @returns {number|null} 需要补画的交点角度，单位为弧度；没有交点时返回 null。
+         */
+        getInterlacedArcAngle(upperRing, lowerRing, pointPosition) {
+          const intersections = this.getIntersectionAngles(upperRing, lowerRing);
+
+          if (intersections.length === 0) {
+            return null;
+          }
+
+          // Canvas 的 y 轴向下，所以 y 更小表示位置更靠上，y 更大表示位置更靠下。
+          // 每组交错关系显式指定使用 upper 还是 lower，避免靠左右位置猜测导致黑绿这类交点选错。
+          return intersections.toSorted((pointA, pointB) =>
+            pointPosition === "upper" ? pointA.y - pointB.y : pointB.y - pointA.y,
+          )[0].angle;
+        }
+
+        /**
+         * 在两个圆环交点附近补画一小段上层圆环，形成相互交错的视觉效果。
+         *
+         * @param {CanvasRenderingContext2D} ctx Canvas 2D 绘图上下文。
+         * @param {OlympicRing} upperRing 需要压在上面的圆环。
+         * @param {OlympicRing} lowerRing 被压在下面的圆环。
+         * @param {"upper"|"lower"} pointPosition 选择更靠上的交点，还是更靠下的交点。
+         * @returns {void}
+         */
+        drawInterlacedArc(ctx, upperRing, lowerRing, pointPosition) {
+          const angle = this.getInterlacedArcAngle(upperRing, lowerRing, pointPosition);
+
+          if (angle === null) {
+            return;
+          }
+
+          // 补画弧线需要覆盖交叉处的线宽。lineWidth / lineRadius 可以粗略换算成角度范围；
+          // 乘以 1.8 是为了让补画弧段稍微长一点，避免交叉处边缘露出下面圆环的颜色。
+          const anglePadding = Math.max(
+            0.12,
+            (this.lineWidth / this.lineRadius) * 1.8,
+          );
+
+          this.drawArc(ctx, upperRing, angle - anglePadding, angle + anglePadding);
+        }
+
+        /**
          * 补画局部弧线，形成五环相互交错的视觉效果。
          *
          * @param {CanvasRenderingContext2D} ctx Canvas 2D 绘图上下文。
@@ -333,16 +416,19 @@
           );
 
           [
-            { name: "blue", start: 1.9, end: 2.1 },
-            { name: "black", start: 0.5, end: 0.6 },
-            { name: "black", start: 1.9, end: 2.1 },
-            { name: "red", start: 0.5, end: 0.6 },
-          ].forEach((arc) => {
-            this.drawArc(
+            // 每一项表示：在指定交点附近，upperRingName 这个环要盖在 lowerRingName 上面。
+            // pointPosition 不是颜色含义，而是两个圆交点的空间位置：upper 表示更靠上的交点，lower 表示更靠下的交点。
+            { upperRingName: "blue", lowerRingName: "yellow", pointPosition: "upper" },
+            { upperRingName: "black", lowerRingName: "yellow", pointPosition: "lower" },
+            { upperRingName: "black", lowerRingName: "green", pointPosition: "upper" },
+            { upperRingName: "green", lowerRingName: "black", pointPosition: "lower" },
+            { upperRingName: "red", lowerRingName: "green", pointPosition: "lower" },
+          ].forEach(({ upperRingName, lowerRingName, pointPosition }) => {
+            this.drawInterlacedArc(
               ctx,
-              ringMap[arc.name],
-              Math.PI * arc.start,
-              Math.PI * arc.end,
+              ringMap[upperRingName],
+              ringMap[lowerRingName],
+              pointPosition,
             );
           });
         }
@@ -351,7 +437,8 @@
       const canvas1 = document.getElementById("canvas-olympic-rings");
       const olympicRings = new OlympicRings({
         x:25,
-        y:25
+        y:25,
+        innerRadius:100
       });
 
       olympicRings.resizeCanvas(canvas1);
