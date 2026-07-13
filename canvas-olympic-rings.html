@@ -60,11 +60,6 @@
        * @property {number} verticalGap 上下两排圆环圆心垂直距离。
        * @property {string} backgroundColor 画布背景色。
        * @property {OlympicRing[]} rings 计算完成后的五个圆环参数。
-       * @property {function(string|number, string): OlympicRingsParams} setRingColor 设置单个圆环颜色。
-       * @property {function(Partial<OlympicRingColors>): OlympicRingsParams} setRingColors 批量设置圆环颜色。
-       * @property {function(string): OlympicRingsParams} setAllRingColor 设置所有圆环为同一种颜色。
-       * @property {function(string): OlympicRingsParams} setBackgroundColor 设置画布背景色。
-       * @property {function(HTMLCanvasElement|CanvasRenderingContext2D): OlympicRingsParams} draw 重新绘制五环。
        */
 
       /**
@@ -257,27 +252,24 @@
          */
         resizeCanvas(canvas) {
           const rings = this.getRings();
-          const maxX = Math.max(
-            ...rings.map((ring) => ring.x + this.outerRadius),
-          );
-          const maxY = Math.max(
-            ...rings.map((ring) => ring.y + this.outerRadius),
-          );
+          // 分别找到所有圆环中最大的圆心 X 和最大的圆心 Y；它们不一定来自同一个圆环。
+          const maxCenterX = Math.max(...rings.map((ring) => ring.x));
+          const maxCenterY = Math.max(...rings.map((ring) => ring.y));
 
-          canvas.width = Math.ceil(maxX + this.options.x);
-          canvas.height = Math.ceil(maxY + this.options.y);
+          // 宽度用最大圆心 X 计算，高度用最大圆心 Y 计算，再分别加上外圈半径和右侧/底部留白。
+          canvas.width = Math.ceil(maxCenterX + this.outerRadius + this.options.x);
+          canvas.height = Math.ceil(maxCenterY + this.outerRadius + this.options.y);
           return this;
         }
 
         /**
-         * 绘制奥运五环，并返回本次绘制使用的参数对象。
+         * 绘制奥运五环。
          *
-         * @param {HTMLCanvasElement|CanvasRenderingContext2D} canvasOrContext canvas 元素或 2D 绘图上下文。
-         * @returns {OlympicRingsParams} 本次绘制使用的五环参数。
+         * @param {HTMLCanvasElement} canvas canvas 元素。
+         * @returns {OlympicRings} 当前实例，便于链式调用。
          */
-        draw(canvasOrContext) {
-          const context = canvasOrContext.getContext?.("2d") ?? canvasOrContext;
-          const canvas = context.canvas;
+        draw(canvas) {
+          const context = canvas.getContext("2d");
 
           context.clearRect(0, 0, canvas.width, canvas.height);
           context.fillStyle = this.options.backgroundColor;
@@ -289,35 +281,7 @@
           rings.forEach((ring) => this.drawArc(context, ring, 0, Math.PI * 2));
           this.drawInterlacedArcs(context, rings);
 
-          return {
-            x: this.options.x,
-            y: this.options.y,
-            innerRadius: this.innerRadius,
-            outerRadius: this.outerRadius,
-            lineRadius: this.lineRadius,
-            lineWidth: this.lineWidth,
-            horizontalGap: this.horizontalGap,
-            verticalGap: this.verticalGap,
-            backgroundColor: this.options.backgroundColor,
-            rings,
-            setRingColor: (ringNameOrIndex, color) => {
-              this.setRingColor(ringNameOrIndex, color);
-              return this.draw(canvasOrContext);
-            },
-            setRingColors: (colors) => {
-              this.setRingColors(colors);
-              return this.draw(canvasOrContext);
-            },
-            setAllRingColor: (color) => {
-              this.setAllRingColor(color);
-              return this.draw(canvasOrContext);
-            },
-            setBackgroundColor: (color) => {
-              this.setBackgroundColor(color);
-              return this.draw(canvasOrContext);
-            },
-            draw: (target = canvasOrContext) => this.draw(target),
-          };
+          return this;
         }
 
         /**
@@ -386,18 +350,17 @@
 
       const canvas1 = document.getElementById("canvas-olympic-rings");
       const olympicRings = new OlympicRings({
-        x: 0,
-        y: 0,
-        innerRadius: 60,
+        x:25,
+        y:25
       });
 
       olympicRings.resizeCanvas(canvas1);
-      const olympicRingsParams = olympicRings.draw(canvas1);
+      olympicRings.draw(canvas1);
 
       // 可扩展调用示例：
       // olympicRings.setAllRingColor("#0085C7").setBackgroundColor("#f7f7f7").draw(canvas1);
       // olympicRings.setRingColor("green", "#00a651").draw(canvas1);
-      console.log(olympicRingsParams);
+      console.log(olympicRings.getRings());
     </script>
   </body>
 </html>
