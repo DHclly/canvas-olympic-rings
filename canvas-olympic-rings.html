@@ -215,10 +215,21 @@
     <canvas id="canvas-olympic-rings" class="canvas-panel">
       Your browser does not support canvas element.
     </canvas>
-    <aside id="rings-control-panel" class="control-panel" aria-label="奥运五环控制面板">
+    <aside
+      id="rings-control-panel"
+      class="control-panel"
+      aria-label="奥运五环控制面板"
+    >
       <div class="control-panel__header">
         <h2 class="control-panel__title">五环参数</h2>
-        <button id="toggle-panel" class="icon-button" type="button" aria-label="折叠控制面板">›</button>
+        <button
+          id="toggle-panel"
+          class="icon-button"
+          type="button"
+          aria-label="折叠控制面板"
+        >
+          ›
+        </button>
       </div>
       <form id="rings-control-form" class="control-panel__body">
         <fieldset class="control-group">
@@ -239,28 +250,88 @@
           <legend>尺寸比例</legend>
           <label class="control-row">
             <span>内圈半径</span>
-            <input name="innerRadius" type="range" min="10" max="140" step="1" />
-            <input name="innerRadiusNumber" type="number" min="10" max="140" step="1" />
+            <input
+              name="innerRadius"
+              type="range"
+              min="10"
+              max="140"
+              step="1"
+            />
+            <input
+              name="innerRadiusNumber"
+              type="number"
+              min="10"
+              max="140"
+              step="1"
+            />
           </label>
           <label class="control-row">
             <span>内圈比例</span>
-            <input name="innerRadiusRatio" type="range" min="0.5" max="1.5" step="0.01" />
-            <input name="innerRadiusRatioNumber" type="number" min="0.5" max="1.5" step="0.01" />
+            <input
+              name="innerRadiusRatio"
+              type="range"
+              min="0.5"
+              max="1.5"
+              step="0.01"
+            />
+            <input
+              name="innerRadiusRatioNumber"
+              type="number"
+              min="0.5"
+              max="1.5"
+              step="0.01"
+            />
           </label>
           <label class="control-row">
             <span>外圈比例</span>
-            <input name="outerRadiusRatio" type="range" min="1.01" max="1.8" step="0.01" />
-            <input name="outerRadiusRatioNumber" type="number" min="1.01" max="1.8" step="0.01" />
+            <input
+              name="outerRadiusRatio"
+              type="range"
+              min="1.01"
+              max="1.8"
+              step="0.01"
+            />
+            <input
+              name="outerRadiusRatioNumber"
+              type="number"
+              min="1.01"
+              max="1.8"
+              step="0.01"
+            />
           </label>
           <label class="control-row">
             <span>水平距离</span>
-            <input name="horizontalGapRatio" type="range" min="1.4" max="3.6" step="0.01" />
-            <input name="horizontalGapRatioNumber" type="number" min="1.4" max="3.6" step="0.01" />
+            <input
+              name="horizontalGapRatio"
+              type="range"
+              min="1.4"
+              max="3.6"
+              step="0.01"
+            />
+            <input
+              name="horizontalGapRatioNumber"
+              type="number"
+              min="1.4"
+              max="3.6"
+              step="0.01"
+            />
           </label>
           <label class="control-row">
             <span>垂直距离</span>
-            <input name="verticalGapRatio" type="range" min="0.2" max="2" step="0.01" />
-            <input name="verticalGapRatioNumber" type="number" min="0.2" max="2" step="0.01" />
+            <input
+              name="verticalGapRatio"
+              type="range"
+              min="0.2"
+              max="2"
+              step="0.01"
+            />
+            <input
+              name="verticalGapRatioNumber"
+              type="number"
+              min="0.2"
+              max="2"
+              step="0.01"
+            />
           </label>
         </fieldset>
 
@@ -299,7 +370,9 @@
           <label class="control-row control-row--color">
             <span>统一颜色</span>
             <input name="allRingsColor" type="color" value="#0085c7" />
-            <button id="apply-all-color" class="control-button" type="button">应用</button>
+            <button id="apply-all-color" class="control-button" type="button">
+              应用
+            </button>
           </label>
         </fieldset>
 
@@ -313,7 +386,9 @@
         </fieldset>
 
         <div class="control-actions">
-          <button id="reset-controls" class="control-button" type="button">重置</button>
+          <button id="reset-controls" class="control-button" type="button">
+            重置
+          </button>
         </div>
       </form>
     </aside>
@@ -730,7 +805,7 @@
           // this.lineWidth / this.lineRadius 得到的是“一整条线宽”对应的大致弧度；
           // 这里取一半作为左右两侧的基础半角，再加 15% 余量，避免刚好露边。
           // 补画时使用 butt 端点，避免 round 端点额外往两侧伸出半个线宽。
-          const anglePadding = (this.lineWidth / this.lineRadius / 2) * 1.60;
+          const anglePadding = (this.lineWidth / this.lineRadius / 2) * 1.6;
 
           this.drawArc(
             ctx,
@@ -822,25 +897,56 @@
         "horizontalGapRatio",
         "verticalGapRatio",
       ];
-      const colorControlNames = [
-        "backgroundColor",
-        ...OlympicRings.ringNames,
-      ];
+      const colorControlNames = ["backgroundColor", ...OlympicRings.ringNames];
       let renderFrameId = null;
 
+      /**
+       * 根据表单控件 name 获取对应的表单元素。
+       *
+       * @param {string} name 表单控件的 name。
+       * @returns {Element|RadioNodeList} 对应的表单控件。
+       */
       const getControl = (name) => controlForm.elements[name];
+
+      /**
+       * 判断字符串是否是 input[type="color"] 支持的十六进制颜色。
+       *
+       * @param {string} value 需要判断的颜色字符串。
+       * @returns {boolean} 是合法 #rrggbb 颜色时返回 true。
+       */
       const isHexColor = (value) => /^#[0-9a-f]{6}$/i.test(value);
+
+      /**
+       * 复制五环配置对象，并单独复制 colors，避免重置或修改时共享同一个颜色对象。
+       *
+       * @param {OlympicRingsOptions} options 需要复制的五环配置。
+       * @returns {OlympicRingsOptions} 复制后的五环配置。
+       */
       const cloneOptions = (options) => ({
         ...options,
         colors: { ...options.colors },
       });
       let currentOptions = cloneOptions(defaultOptions);
 
+      /**
+       * 同步某个数字参数的 range 输入框和 number 输入框。
+       *
+       * @param {string} name 参数名称。
+       * @param {number|string} value 参数值。
+       * @returns {void}
+       */
       const setNumberControls = (name, value) => {
         getControl(name).value = value;
         getControl(`${name}Number`).value = value;
       };
 
+      /**
+       * 同步某个颜色参数的 color 输入框和文本输入框。
+       *
+       * @param {string} name 颜色参数名称。
+       * @param {string} value CSS 十六进制颜色值。
+       * @returns {void}
+       */
       const setColorControls = (name, value) => {
         if (isHexColor(value)) {
           getControl(name).value = value;
@@ -849,20 +955,46 @@
         getControl(`${name}Text`).value = value;
       };
 
+      /**
+       * 将当前配置写回控制面板，让重置或初始化后的 UI 与配置保持一致。
+       *
+       * @returns {void}
+       */
       const syncControlsFromOptions = () => {
-        numberControlNames.forEach((name) => setNumberControls(name, currentOptions[name]));
+        numberControlNames.forEach((name) =>
+          setNumberControls(name, currentOptions[name]),
+        );
         setColorControls("backgroundColor", currentOptions.backgroundColor);
-        OlympicRings.ringNames.forEach((name) => setColorControls(name, currentOptions.colors[name]));
-        getControl("debugEnabled").checked = Boolean(currentOptions.debugInterlacedColor);
-        getControl("debugInterlacedColor").value = currentOptions.debugInterlacedColor ?? "#ff69b4";
+        OlympicRings.ringNames.forEach((name) =>
+          setColorControls(name, currentOptions.colors[name]),
+        );
+        getControl("debugEnabled").checked = Boolean(
+          currentOptions.debugInterlacedColor,
+        );
+        getControl("debugInterlacedColor").value =
+          currentOptions.debugInterlacedColor ?? "#ff69b4";
       };
 
+      /**
+       * 按当前配置重新计算画布尺寸并绘制五环。
+       *
+       * @returns {void}
+       */
       const render = () => {
         renderFrameId = null;
         olympicRings.options = cloneOptions(currentOptions);
         olympicRings.resizeCanvas(canvas).draw(canvas);
       };
 
+      /**
+       * 安排下一帧重绘。
+       *
+       * 控制面板的滑块会连续触发 input 事件，如果每次事件都立刻 resize + draw，
+       * 浏览器可能在一帧内重复做多次无意义绘制。这里用 requestAnimationFrame
+       * 把多次输入合并到下一帧，只保留一次真正的 render。
+       *
+       * @returns {void}
+       */
       const scheduleRender = () => {
         if (renderFrameId !== null) {
           return;
@@ -871,6 +1003,13 @@
         renderFrameId = requestAnimationFrame(render);
       };
 
+      /**
+       * 更新一个数字配置项，并同步同组输入框后安排重绘。
+       *
+       * @param {string} name 数字配置项名称。
+       * @param {string|number} value 来自表单的数字值。
+       * @returns {void}
+       */
       const updateNumberOption = (name, value) => {
         const numberValue = Number(value);
 
@@ -883,6 +1022,13 @@
         scheduleRender();
       };
 
+      /**
+       * 更新一个颜色配置项，并同步同组输入框后安排重绘。
+       *
+       * @param {string} name 颜色配置项名称，backgroundColor 表示背景色，其它名称表示圆环颜色。
+       * @param {string} value CSS 十六进制颜色值。
+       * @returns {void}
+       */
       const updateColorOption = (name, value) => {
         if (!isHexColor(value)) {
           getControl(`${name}Text`).value = value;
@@ -899,7 +1045,13 @@
         scheduleRender();
       };
 
-      controlForm.addEventListener("input", (event) => {
+      /**
+       * 处理控制面板输入事件，并根据控件名称分发到对应的配置更新逻辑。
+       *
+       * @param {InputEvent} event 表单 input 事件。
+       * @returns {void}
+       */
+      const handleControlInput = (event) => {
         const { name, value, checked } = event.target;
 
         if (numberControlNames.includes(name)) {
@@ -923,18 +1075,28 @@
         }
 
         if (name === "debugEnabled") {
-          currentOptions.debugInterlacedColor = checked ? getControl("debugInterlacedColor").value : null;
+          currentOptions.debugInterlacedColor = checked
+            ? getControl("debugInterlacedColor").value
+            : null;
           scheduleRender();
           return;
         }
 
         if (name === "debugInterlacedColor") {
-          currentOptions.debugInterlacedColor = getControl("debugEnabled").checked ? value : null;
+          currentOptions.debugInterlacedColor = getControl("debugEnabled")
+            .checked
+            ? value
+            : null;
           scheduleRender();
         }
-      });
+      };
 
-      applyAllColorButton.addEventListener("click", () => {
+      /**
+       * 将统一颜色应用到五个圆环，并同步五个颜色控件。
+       *
+       * @returns {void}
+       */
+      const handleApplyAllColor = () => {
         const color = getControl("allRingsColor").value;
 
         OlympicRings.ringNames.forEach((name) => {
@@ -942,19 +1104,37 @@
           setColorControls(name, color);
         });
         scheduleRender();
-      });
+      };
 
-      resetControlsButton.addEventListener("click", () => {
+      /**
+       * 将配置和控制面板恢复到初始状态。
+       *
+       * @returns {void}
+       */
+      const handleResetControls = () => {
         currentOptions = cloneOptions(defaultOptions);
         syncControlsFromOptions();
         scheduleRender();
-      });
+      };
 
-      togglePanelButton.addEventListener("click", () => {
+      /**
+       * 切换右侧控制面板的展开和折叠状态。
+       *
+       * @returns {void}
+       */
+      const handleTogglePanel = () => {
         const isCollapsed = controlPanel.classList.toggle("is-collapsed");
         togglePanelButton.textContent = isCollapsed ? "‹" : "›";
-        togglePanelButton.setAttribute("aria-label", isCollapsed ? "展开控制面板" : "折叠控制面板");
-      });
+        togglePanelButton.setAttribute(
+          "aria-label",
+          isCollapsed ? "展开控制面板" : "折叠控制面板",
+        );
+      };
+
+      controlForm.addEventListener("input", handleControlInput);
+      applyAllColorButton.addEventListener("click", handleApplyAllColor);
+      resetControlsButton.addEventListener("click", handleResetControls);
+      togglePanelButton.addEventListener("click", handleTogglePanel);
 
       syncControlsFromOptions();
       render();
