@@ -803,7 +803,7 @@
 
           // 补画弧线只需要覆盖交点附近的一小段。
           // this.lineWidth / this.lineRadius 得到的是“一整条线宽”对应的大致弧度；
-          // 这里取一半作为左右两侧的基础半角，再加 15% 余量，避免刚好露边。
+          // 这里取一半作为左右两侧的基础半角，再加 60% 余量，避免刚好露边。
           // 补画时使用 butt 端点，避免 round 端点额外往两侧伸出半个线宽。
           const anglePadding = (this.lineWidth / this.lineRadius / 2) * 1.6;
 
