@@ -96,7 +96,11 @@
           };
 
           this.options = Object.assign({}, defaults, options);
-          this.options.colors = Object.assign({}, defaults.colors, options && options.colors);
+          this.options.colors = Object.assign(
+            {},
+            defaults.colors,
+            options && options.colors,
+          );
           this.ringNames = ["blue", "black", "red", "yellow", "green"];
         }
 
@@ -168,8 +172,16 @@
             this.createRing("blue", startX, startY),
             this.createRing("black", startX + this.horizontalGap, startY),
             this.createRing("red", startX + this.horizontalGap * 2, startY),
-            this.createRing("yellow", startX + middleOffsetX, startY + this.verticalGap),
-            this.createRing("green", startX + this.horizontalGap + middleOffsetX, startY + this.verticalGap),
+            this.createRing(
+              "yellow",
+              startX + middleOffsetX,
+              startY + this.verticalGap,
+            ),
+            this.createRing(
+              "green",
+              startX + this.horizontalGap + middleOffsetX,
+              startY + this.verticalGap,
+            ),
           ];
         }
 
@@ -181,7 +193,10 @@
          * @returns {OlympicRings} 当前实例，便于链式调用。
          */
         setRingColor(ringNameOrIndex, color) {
-          const ringName = typeof ringNameOrIndex === "number" ? this.ringNames[ringNameOrIndex] : ringNameOrIndex;
+          const ringName =
+            typeof ringNameOrIndex === "number"
+              ? this.ringNames[ringNameOrIndex]
+              : ringNameOrIndex;
 
           if (this.options.colors[ringName]) {
             this.options.colors[ringName] = color;
@@ -236,14 +251,14 @@
          * @returns {OlympicRings} 当前实例，便于链式调用。
          */
         resizeCanvas(canvas) {
-          const params = this.getParams();
+          const rings = this.getRings();
           const maxX = Math.max.apply(
             null,
-            params.rings.map((ring) => ring.x + params.outerRadius),
+            rings.map((ring) => ring.x + this.outerRadius),
           );
           const maxY = Math.max.apply(
             null,
-            params.rings.map((ring) => ring.y + params.outerRadius),
+            rings.map((ring) => ring.y + this.outerRadius),
           );
 
           canvas.width = Math.ceil(maxX + this.options.x);
@@ -258,20 +273,20 @@
          * @returns {OlympicRingsParams} 本次绘制使用的五环参数。
          */
         draw(canvasOrContext) {
-          const ctx = canvasOrContext.getContext ? canvasOrContext.getContext("2d") : canvasOrContext;
-          const canvas = ctx.canvas;
-          const params = this.getParams();
+          const context = canvasOrContext.getContext
+            ? canvasOrContext.getContext("2d")
+            : canvasOrContext;
+          const canvas = context.canvas;
 
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-          ctx.fillStyle = params.backgroundColor;
-          ctx.fillRect(0, 0, canvas.width, canvas.height);
-          ctx.lineWidth = params.lineWidth;
-          ctx.lineCap = "round";
+          context.clearRect(0, 0, canvas.width, canvas.height);
+          context.fillStyle = this.options.backgroundColor;
+          context.fillRect(0, 0, canvas.width, canvas.height);
+          context.lineWidth = this.lineWidth;
+          context.lineCap = "round";
 
-          params.rings.forEach((ring) => this.drawArc(ctx, ring, 0, Math.PI * 2));
-          this.drawInterlacedArcs(ctx, params.rings);
-
-          return params;
+          const rings = this.getRings();
+          rings.forEach((ring) => this.drawArc(context, ring, 0, Math.PI * 2));
+          this.drawInterlacedArcs(context, rings);
         }
 
         /**
@@ -329,7 +344,12 @@
             { name: "black", start: 1.9, end: 2.1 },
             { name: "red", start: 0.5, end: 0.6 },
           ].forEach((arc) => {
-            this.drawArc(ctx, ringMap[arc.name], Math.PI * arc.start, Math.PI * arc.end);
+            this.drawArc(
+              ctx,
+              ringMap[arc.name],
+              Math.PI * arc.start,
+              Math.PI * arc.end,
+            );
           });
         }
       }
