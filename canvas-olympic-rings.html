@@ -26,8 +26,8 @@
 
       /**
        * @typedef {Object} OlympicRingsOptions
-       * @property {number} [x=15] 五环整体距离画布左侧的偏移量。
-       * @property {number} [y=20] 五环整体距离画布顶部的偏移量。
+       * @property {number} [x=0] 五环整体距离画布左侧的偏移量。
+       * @property {number} [y=0] 五环整体距离画布顶部的偏移量。
        * @property {number} [innerRadius=40] 基础内圈半径，所有比例都基于这个值计算。
        * @property {number} [innerRadiusRatio=1] 内圈半径比例。
        * @property {number} [outerRadiusRatio=1.2] 外圈半径比例。
@@ -171,43 +171,6 @@
             this.createRing("yellow", startX + middleOffsetX, startY + this.verticalGap),
             this.createRing("green", startX + this.horizontalGap + middleOffsetX, startY + this.verticalGap),
           ];
-        }
-
-        /**
-         * 获取当前五环的完整参数对象，并在参数对象上暴露可扩展操作方法。
-         *
-         * @returns {OlympicRingsParams} 当前五环参数。
-         */
-        getParams() {
-          return {
-            x: this.options.x,
-            y: this.options.y,
-            innerRadius: this.innerRadius,
-            outerRadius: this.outerRadius,
-            lineRadius: this.lineRadius,
-            lineWidth: this.lineWidth,
-            horizontalGap: this.horizontalGap,
-            verticalGap: this.verticalGap,
-            backgroundColor: this.options.backgroundColor,
-            rings: this.getRings(),
-            setRingColor: (ringNameOrIndex, color) => {
-              this.setRingColor(ringNameOrIndex, color);
-              return this.getParams();
-            },
-            setRingColors: (colors) => {
-              this.setRingColors(colors);
-              return this.getParams();
-            },
-            setAllRingColor: (color) => {
-              this.setAllRingColor(color);
-              return this.getParams();
-            },
-            setBackgroundColor: (color) => {
-              this.setBackgroundColor(color);
-              return this.getParams();
-            },
-            draw: (canvasOrContext) => this.draw(canvasOrContext),
-          };
         }
 
         /**
